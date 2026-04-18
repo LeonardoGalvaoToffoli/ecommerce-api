@@ -20,7 +20,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Desativa proteção contra ataques de formulários web (não se aplica a APIs REST)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // A API não guardará sessão de usuário na memória
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.POST, "/api/usuarios", "/api/produtos").permitAll() // Rota pública
+                        .requestMatchers(HttpMethod.POST, "/api/usuarios", "/api/produtos", "/api/pedidos/checkout").permitAll() // Rota pública
                         .anyRequest().authenticated() // Qualquer outra rota precisará de token
                 )
                 .build();
