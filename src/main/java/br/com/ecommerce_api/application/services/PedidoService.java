@@ -1,9 +1,8 @@
 package br.com.ecommerce_api.application.services;
 
-import br.com.ecommerce_api.application.dtos.CheckoutRequestDTO;
-import br.com.ecommerce_api.application.dtos.CheckoutResponseDTO;
-import br.com.ecommerce_api.application.dtos.ItemCompraDTO;
+import br.com.ecommerce_api.application.dtos.*;
 import br.com.ecommerce_api.domain.entities.*;
+import br.com.ecommerce_api.infrastructure.messaging.PedidoEventProducer;
 import br.com.ecommerce_api.infrastructure.repositories.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,12 +18,16 @@ public class PedidoService {
     private final UsuarioRepository usuarioRepository;
     private final VariacaoRepository variacaoRepository;
     private final EnderecoRepository enderecoRepository;
+    private final PagamentoRepository pagamentoRepository;
+    private final PedidoEventProducer pedidoEventProducer;
 
-    public PedidoService(PedidoRepository pedidoRepository, UsuarioRepository usuarioRepository, VariacaoRepository variacaoRepository, EnderecoRepository enderecoRepository) {
+    public PedidoService(PedidoRepository pedidoRepository, UsuarioRepository usuarioRepository, VariacaoRepository variacaoRepository, EnderecoRepository enderecoRepository, PagamentoRepository pagamentoRepository, PedidoEventProducer pedidoEventProducer) {
         this.pedidoRepository = pedidoRepository;
         this.usuarioRepository = usuarioRepository;
         this.variacaoRepository = variacaoRepository;
         this.enderecoRepository = enderecoRepository;
+        this.pagamentoRepository = pagamentoRepository;
+        this.pedidoEventProducer = pedidoEventProducer;
     }
 
     @Transactional
@@ -90,5 +93,32 @@ public class PedidoService {
                 pedidoSalvo.getStatus(),
                 pedidoSalvo.getPagamento().getCodigoPix()
         );
+    }
+    @Transactional
+    public void processarPagamentoPix(WebhookPixDTO dto) {
+        Pagamento pagamento = pagamentoRepository.findByCodigoPix(dto.codigoPix())
+                .orElseThrow(() -> new RuntimeException("Pagamento não encontrado"));
+
+        if (pagamento.getStatus().equals("PAGO")) {
+            throw new RuntimeException("Este pagamento já foi processado.");
+        }
+
+        if (dto.statusPagamento().equalsIgnoreCase("APROVADO")) {
+            pagamento.setStatus("PAGO");
+            pagamento.setDataPagamento(LocalDateTime.now());
+
+            // O pedido é a raiz, atualizamos ele também
+            pagamento.getPedido().setStatus("PAGO");
+
+            pedidoEventProducer.enviarPedidoPago(new PedidoPagoEvent(pagamento.getPedido().getId()));
+
+        } else if (dto.statusPagamento().equalsIgnoreCase("RECUSADO")) {
+            pagamento.setStatus("RECUSADO");
+            pagamento.getPedido().setStatus("CANCELADO");
+
+            // TODO: Se der tempo, podemos fazer a lógica de devolver o estoque aqui
+        }
+
+        pagamentoRepository.save(pagamento);
     }
 }

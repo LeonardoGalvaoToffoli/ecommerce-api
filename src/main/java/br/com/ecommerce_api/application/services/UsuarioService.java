@@ -23,7 +23,7 @@ public class UsuarioService {
         Usuario usuario = new Usuario();
         usuario.setNome(dto.nome());
         usuario.setEmail(dto.email());
-        usuario.setSenha(dto.senha());
+        usuario.setSenha(passwordEncoder.encode(dto.senha()));
         usuario.setCpf(dto.cpf());
         usuario.setTelefone(dto.telefone());
         usuario.setRole("ROLE_USER");
