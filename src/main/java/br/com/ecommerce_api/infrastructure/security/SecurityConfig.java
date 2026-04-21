@@ -29,9 +29,8 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
                     // Rotas 100% públicas
-                    req.requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll();
-                    req.requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll();
-                    req.requestMatchers(HttpMethod.POST, "/api/webhooks/pix").permitAll();
+                    req.requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/usuarios", "/api/webhooks/pix").permitAll();
+                    req.requestMatchers(HttpMethod.GET, "/api/produtos", "/api/produtos/**").permitAll();
 
                     // Rotas exclusivas de Administrador
                     req.requestMatchers(HttpMethod.POST, "/api/produtos").hasRole("ADMIN");
