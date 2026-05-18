@@ -23,13 +23,21 @@ public class UsuarioService {
     }
 
     public UsuarioResponseDTO criar(UsuarioRequestDTO dto) {
+        return criarComRole(dto, "ROLE_USER");
+    }
+
+    public UsuarioResponseDTO criarAdmin(UsuarioRequestDTO dto) {
+        return criarComRole(dto, "ROLE_ADMIN");
+    }
+
+    private UsuarioResponseDTO criarComRole(UsuarioRequestDTO dto, String role) {
         Usuario usuario = new Usuario();
         usuario.setNome(dto.nome());
         usuario.setEmail(dto.email());
         usuario.setSenha(passwordEncoder.encode(dto.senha()));
         usuario.setCpf(dto.cpf());
         usuario.setTelefone(dto.telefone());
-        usuario.setRole("ROLE_USER");
+        usuario.setRole(role);
         usuario.setAtivo(true);
         usuario.setDataCadastro(LocalDateTime.now());
 

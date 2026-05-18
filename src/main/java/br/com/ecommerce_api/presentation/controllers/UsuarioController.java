@@ -28,6 +28,12 @@ public class UsuarioController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @PostMapping("/admin")
+    public ResponseEntity<UsuarioResponseDTO> criarAdmin(@Valid @RequestBody UsuarioRequestDTO dto) {
+        UsuarioResponseDTO response = service.criarAdmin(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
     @PutMapping("/perfil")
     public ResponseEntity<UsuarioPerfilDTO> atualizarPerfil(
             @AuthenticationPrincipal Usuario usuarioLogado,

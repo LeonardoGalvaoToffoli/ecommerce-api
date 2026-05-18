@@ -32,3 +32,20 @@ build/
 
 ### VS Code ###
 .vscode/
+
+###Extras###
+**docs
+
+### Frontend (Node + Vite) ###
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/.vite/
+frontend/*.log
+npm-debug.log*
+
+### Env ###
+.env
+.env.local
+.env.*.local
+!.env.production.example

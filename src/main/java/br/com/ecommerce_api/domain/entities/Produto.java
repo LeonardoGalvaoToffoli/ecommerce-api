@@ -25,7 +25,12 @@ public class Produto {
 
     private BigDecimal precoBase;
 
+    @Column(length = 1024)
+    private String imagemUrl;
+
     private Boolean ativo;
+
+    private Boolean destaque;
 
     @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Variacao> variacoes = new ArrayList<>();

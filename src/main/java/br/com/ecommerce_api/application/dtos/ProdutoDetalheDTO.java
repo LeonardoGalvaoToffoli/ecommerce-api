@@ -8,7 +8,9 @@ public record ProdutoDetalheDTO(
         String nome,
         String descricao,
         BigDecimal precoBase,
+        String imagemUrl,
         Boolean ativo,
+        Boolean destaque,
         List<VariacaoDTO> variacoes
 ) {
 }

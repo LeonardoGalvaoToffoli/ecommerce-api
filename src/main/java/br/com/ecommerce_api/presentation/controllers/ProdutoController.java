@@ -1,5 +1,6 @@
 package br.com.ecommerce_api.presentation.controllers;
 
+import br.com.ecommerce_api.application.dtos.ProdutoAtualizacaoDTO;
 import br.com.ecommerce_api.application.dtos.ProdutoRequestDTO;
 import br.com.ecommerce_api.application.dtos.ProdutoResponseDTO;
 import br.com.ecommerce_api.application.dtos.ProdutoDetalheDTO;
@@ -12,6 +13,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.PathVariable;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/produtos")
@@ -29,12 +32,25 @@ public class ProdutoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<ProdutoResponseDTO> atualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody ProdutoAtualizacaoDTO dto) {
+        ProdutoResponseDTO response = service.atualizar(id, dto);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping
     public ResponseEntity<Page<ProdutoResponseDTO>> listar(
             @PageableDefault(size = 20, sort = "nome") Pageable pageable) {
 
         var page = service.listarVitrine(pageable);
         return ResponseEntity.ok(page);
+    }
+
+    @GetMapping("/destaques")
+    public ResponseEntity<List<ProdutoResponseDTO>> listarDestaques() {
+        return ResponseEntity.ok(service.listarDestaques());
     }
 
     @GetMapping("/{id}")

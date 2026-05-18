@@ -8,7 +8,9 @@ public record ProdutoResponseDTO(
         String nome,
         String descricao,
         BigDecimal precoBase,
-        Boolean ativo
+        String imagemUrl,
+        Boolean ativo,
+        Boolean destaque
 ) {
     public ProdutoResponseDTO(Produto produto) {
         this(
@@ -16,7 +18,9 @@ public record ProdutoResponseDTO(
                 produto.getNome(),
                 produto.getDescricao(),
                 produto.getPrecoBase(),
-                produto.getAtivo()
+                produto.getImagemUrl(),
+                produto.getAtivo(),
+                Boolean.TRUE.equals(produto.getDestaque())
         );
     }
 }

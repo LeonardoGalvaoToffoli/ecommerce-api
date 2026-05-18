@@ -34,6 +34,8 @@ public class SecurityConfig {
 
                     // Rotas exclusivas de Administrador
                     req.requestMatchers(HttpMethod.POST, "/api/produtos").hasRole("ADMIN");
+                    req.requestMatchers(HttpMethod.PUT, "/api/produtos/**").hasRole("ADMIN");
+                    req.requestMatchers(HttpMethod.POST, "/api/usuarios/admin").hasRole("ADMIN");
 
                     // Qualquer outra rota (ex: Checkout) exige usuário logado
                     req.anyRequest().authenticated();

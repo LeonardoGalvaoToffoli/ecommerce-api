@@ -1,5 +1,6 @@
 package br.com.ecommerce_api.application.services;
 
+import br.com.ecommerce_api.application.dtos.ProdutoAtualizacaoDTO;
 import br.com.ecommerce_api.application.dtos.ProdutoRequestDTO;
 import br.com.ecommerce_api.application.dtos.ProdutoResponseDTO;
 import br.com.ecommerce_api.application.dtos.ProdutoDetalheDTO;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -29,6 +31,7 @@ public class ProdutoService {
                 dto.nome(),
                 dto.descricao(),
                 dto.precoBase(),
+                dto.imagemUrl(),
                 dto.tamanho(),
                 dto.cor(),
                 dto.estoqueInicial()
@@ -39,9 +42,33 @@ public class ProdutoService {
         return new ProdutoResponseDTO(salvo);
     }
 
+    @Transactional
+    public ProdutoResponseDTO atualizar(Long id, ProdutoAtualizacaoDTO dto) {
+        Produto produto = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Produto não encontrado"));
+
+        produto.setNome(dto.nome());
+        produto.setDescricao(dto.descricao());
+        produto.setPrecoBase(dto.precoBase());
+        produto.setImagemUrl(dto.imagemUrl());
+        produto.setAtivo(dto.ativo());
+        produto.setDestaque(dto.destaque());
+
+        Produto salvo = repository.save(produto);
+
+        return new ProdutoResponseDTO(salvo);
+    }
+
     public Page<ProdutoResponseDTO> listarVitrine(Pageable pageable) {
         return repository.findAll(pageable)
                 .map(ProdutoResponseDTO::new);
+    }
+
+    public List<ProdutoResponseDTO> listarDestaques() {
+        return repository.findByDestaqueTrueAndAtivoTrueOrderByIdDesc()
+                .stream()
+                .map(ProdutoResponseDTO::new)
+                .toList();
     }
 
     public ProdutoDetalheDTO buscarProdutoPorId(Long id) {
@@ -63,7 +90,9 @@ public class ProdutoService {
                 produto.getNome(),
                 produto.getDescricao(),
                 produto.getPrecoBase(),
+                produto.getImagemUrl(),
                 produto.getAtivo(),
+                Boolean.TRUE.equals(produto.getDestaque()),
                 variacoesDTO
         );
     }
