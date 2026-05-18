@@ -86,8 +86,7 @@ jobs:
             set -euo pipefail
             cd ${{ secrets.VPS_APP_DIR }}
 
-            # Autentica no GHCR com PAT read-only (ou token efemero do compose host)
-            echo "${{ secrets.GHCR_READ_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_READ_USER }} --password-stdin
+            # Imagens publicas no GHCR — nao precisa de docker login
 
             # Atualiza imagens e sobe
             export BACKEND_IMAGE=${{ env.BACKEND_IMAGE }}:${{ needs.build-and-push.outputs.backend_tag }}
