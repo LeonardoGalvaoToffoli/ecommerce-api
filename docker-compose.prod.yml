@@ -9,6 +9,8 @@ services:
       POSTGRES_DB: ${DB_NAME}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
@@ -19,8 +21,8 @@ services:
     image: rabbitmq:3-management
     container_name: ecommerce-rabbitmq
     restart: unless-stopped
-    ports:
-      - "15672:15672"   # painel — exponha somente atras de firewall
+    networks:
+      - internal
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 15s
@@ -43,8 +45,8 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME}
       SPRING_RABBITMQ_HOST: rabbitmq
-    expose:
-      - "8080"
+    networks:
+      - internal
 
   frontend:
     image: ${FRONTEND_IMAGE:-ghcr.io/leonardogalvaotoffoli/ecommerce-api-frontend:latest}
@@ -52,8 +54,30 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
-    ports:
-      - "${FRONTEND_PORT:-80}:80"
+    networks:
+      - internal
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_default"
+      # roteador HTTP redireciona pra HTTPS
+      - "traefik.http.routers.camisaria-http.rule=Host(`store.paglamp.com.br`)"
+      - "traefik.http.routers.camisaria-http.entrypoints=web"
+      - "traefik.http.routers.camisaria-http.middlewares=camisaria-https-redirect"
+      - "traefik.http.middlewares.camisaria-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.camisaria-https-redirect.redirectscheme.permanent=true"
+      # roteador HTTPS com TLS via leresolver (Let's Encrypt)
+      - "traefik.http.routers.camisaria.rule=Host(`store.paglamp.com.br`)"
+      - "traefik.http.routers.camisaria.entrypoints=websecure"
+      - "traefik.http.routers.camisaria.tls=true"
+      - "traefik.http.routers.camisaria.tls.certresolver=leresolver"
+      - "traefik.http.services.camisaria.loadbalancer.server.port=80"
+
+networks:
+  internal:
+  traefik:
+    name: traefik_default
+    external: true
 
 volumes:
   pgdata:
