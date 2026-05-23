@@ -29,11 +29,16 @@ public class AuthController {
         Usuario usuario = usuarioRepository.findByEmail(dto.email())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        if (passwordEncoder.matches(dto.senha(), usuario.getSenha())) {
-            String token = tokenService.gerarToken(usuario);
-            return ResponseEntity.ok(new LoginResponseDTO(token));
+        if (!passwordEncoder.matches(dto.senha(), usuario.getSenha())) {
+            return ResponseEntity.status(401).build();
         }
 
-        return ResponseEntity.status(401).build();
+        if (!usuario.isEnabled()) {
+            // Conta desativada — bloqueia o login mas nao denuncia o motivo
+            return ResponseEntity.status(401).build();
+        }
+
+        String token = tokenService.gerarToken(usuario);
+        return ResponseEntity.ok(new LoginResponseDTO(token));
     }
 }

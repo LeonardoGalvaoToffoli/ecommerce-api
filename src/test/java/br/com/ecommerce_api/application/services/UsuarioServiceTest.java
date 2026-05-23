@@ -14,10 +14,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -88,6 +92,70 @@ class UsuarioServiceTest {
         assertThat(salvo.getRole()).isEqualTo("ROLE_ADMIN");
         assertThat(salvo.getSenha()).isEqualTo("ADMINHASH");
         assertThat(response.role()).isEqualTo("ROLE_ADMIN");
+    }
+
+    @Test
+    @DisplayName("listarAdmins delega para query derivada com role ROLE_ADMIN")
+    void listarAdmins_buscaPorRole() {
+        Usuario adm = new Usuario();
+        adm.setId(1L);
+        adm.setNome("Joao");
+        adm.setEmail("joao@exemplo.com");
+        adm.setCpf("11122233344");
+        adm.setTelefone("119");
+        adm.setRole("ROLE_ADMIN");
+        adm.setAtivo(true);
+        adm.setDataCadastro(LocalDateTime.now());
+
+        when(repository.findByRoleOrderByDataCadastroDesc("ROLE_ADMIN")).thenReturn(List.of(adm));
+
+        var result = service.listarAdmins();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).email()).isEqualTo("joao@exemplo.com");
+        assertThat(result.get(0).role()).isEqualTo("ROLE_ADMIN");
+    }
+
+    @Test
+    @DisplayName("definirAtivo seta ativo=false e persiste")
+    void definirAtivo_desativa() {
+        Usuario alvo = new Usuario();
+        alvo.setId(42L);
+        alvo.setAtivo(true);
+
+        Usuario solicitante = new Usuario();
+        solicitante.setId(1L);
+
+        when(repository.findById(42L)).thenReturn(Optional.of(alvo));
+        when(repository.save(any(Usuario.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.definirAtivo(42L, false, solicitante);
+
+        assertThat(alvo.getAtivo()).isFalse();
+        verify(repository).save(alvo);
+    }
+
+    @Test
+    @DisplayName("definirAtivo bloqueia auto-desativacao")
+    void definirAtivo_autoDesativacaoLancaConflito() {
+        Usuario eu = new Usuario();
+        eu.setId(1L);
+        eu.setAtivo(true);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(eu));
+
+        assertThatThrownBy(() -> service.definirAtivo(1L, false, eu))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("proprio usuario");
+    }
+
+    @Test
+    @DisplayName("definirAtivo com id inexistente lanca 404")
+    void definirAtivo_idInexistenteLanca404() {
+        when(repository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.definirAtivo(999L, true, null))
+                .isInstanceOf(ResponseStatusException.class);
     }
 
     @Test

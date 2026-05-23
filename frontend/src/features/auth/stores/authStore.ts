@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-export const ADMIN_EMAIL = 'joaopaulo0001@outlook.com';
-
 type AuthUser = {
   id: number;
   email: string;
@@ -18,7 +16,7 @@ type AuthState = {
 
 export function isAdminUser(user?: Pick<AuthUser, 'email' | 'role'>): boolean {
   if (!user) return false;
-  return user.role === 'ROLE_ADMIN' && user.email.toLowerCase() === ADMIN_EMAIL;
+  return user.role === 'ROLE_ADMIN';
 }
 
 export const selectIsAdmin = (state: AuthState) => isAdminUser(state.user);

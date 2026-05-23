@@ -28,10 +28,16 @@ public class SecurityFilter extends OncePerRequestFilter {
 
         if (token != null) {
             var email = tokenService.validarToken(token);
-            var usuario = usuarioRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-
-            var authentication = new UsernamePasswordAuthenticationToken(usuario, null, usuario.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (email != null && !email.isBlank()) {
+                var usuarioOpt = usuarioRepository.findByEmail(email);
+                if (usuarioOpt.isPresent() && usuarioOpt.get().isEnabled()) {
+                    var usuario = usuarioOpt.get();
+                    var authentication = new UsernamePasswordAuthenticationToken(usuario, null, usuario.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+                // usuario desativado ou inexistente: nao autenticamos, deixamos cair na
+                // policy de "anyRequest().authenticated()" => 401/403
+            }
         }
 
         filterChain.doFilter(request, response);

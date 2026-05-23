@@ -12,6 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/usuarios")
 public class UsuarioController {
@@ -32,6 +35,24 @@ public class UsuarioController {
     public ResponseEntity<UsuarioResponseDTO> criarAdmin(@Valid @RequestBody UsuarioRequestDTO dto) {
         UsuarioResponseDTO response = service.criarAdmin(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/admins")
+    public ResponseEntity<List<UsuarioResponseDTO>> listarAdmins() {
+        return ResponseEntity.ok(service.listarAdmins());
+    }
+
+    @PatchMapping("/{id}/ativo")
+    public ResponseEntity<UsuarioResponseDTO> definirAtivo(
+            @PathVariable Long id,
+            @RequestBody Map<String, Boolean> body,
+            @AuthenticationPrincipal Usuario solicitante) {
+
+        Boolean ativo = body.get("ativo");
+        if (ativo == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(service.definirAtivo(id, ativo, solicitante));
     }
 
     @PutMapping("/perfil")
