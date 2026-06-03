@@ -2,11 +2,16 @@ package br.com.ecommerce_api.presentation.controllers;
 
 import br.com.ecommerce_api.application.dtos.CheckoutRequestDTO;
 import br.com.ecommerce_api.application.dtos.CheckoutResponseDTO;
+import br.com.ecommerce_api.application.dtos.PedidoAdminDTO;
 import br.com.ecommerce_api.application.dtos.PedidoDetalheDTO;
 import br.com.ecommerce_api.application.services.PedidoService;
 import br.com.ecommerce_api.domain.entities.Usuario;
 import br.com.ecommerce_api.application.dtos.PedidoHistoricoDTO;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,5 +47,16 @@ public class PedidoController {
     public ResponseEntity<PedidoDetalheDTO> buscarDetalhes(@PathVariable Long id, @AuthenticationPrincipal Usuario usuarioLogado) {
         PedidoDetalheDTO detalhes = service.buscarDetalhesPedido(id, usuarioLogado);
         return ResponseEntity.ok(detalhes);
+    }
+
+    @GetMapping("/admin")
+    public ResponseEntity<Page<PedidoAdminDTO>> listarTodos(
+            @PageableDefault(size = 10, sort = "dataPedido", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(service.listarTodosAdmin(pageable));
+    }
+
+    @PostMapping("/{id}/simular-pix-pago")
+    public ResponseEntity<PedidoAdminDTO> simularPixPago(@PathVariable Long id) {
+        return ResponseEntity.ok(service.simularPixPago(id));
     }
 }

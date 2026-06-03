@@ -38,6 +38,8 @@ public class SecurityConfig {
                     req.requestMatchers(HttpMethod.POST, "/api/usuarios/admin").hasRole("ADMIN");
                     req.requestMatchers(HttpMethod.GET, "/api/usuarios/admins").hasRole("ADMIN");
                     req.requestMatchers(HttpMethod.PATCH, "/api/usuarios/*/ativo").hasRole("ADMIN");
+                    req.requestMatchers(HttpMethod.GET, "/api/pedidos/admin").hasRole("ADMIN");
+                    req.requestMatchers(HttpMethod.POST, "/api/pedidos/*/simular-pix-pago").hasRole("ADMIN");
 
                     // Qualquer outra rota (ex: Checkout) exige usuário logado
                     req.anyRequest().authenticated();

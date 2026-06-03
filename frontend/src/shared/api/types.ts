@@ -139,3 +139,14 @@ export interface PedidoDetalheDTO extends PedidoHistoricoDTO {
   enderecoEntrega: string;
   itens: ItemPedidoDTO[];
 }
+
+export interface PedidoAdminDTO {
+  pedidoId: number;
+  dataPedido: string;
+  statusPedido: string;
+  valorTotal: number;
+  clienteNome: string;
+  clienteEmail: string;
+  codigoPix: string | null;
+  statusPagamento: string | null;
+}

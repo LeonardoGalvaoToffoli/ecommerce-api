@@ -5,6 +5,8 @@ import br.com.ecommerce_api.domain.entities.*;
 import br.com.ecommerce_api.infrastructure.messaging.PedidoEventProducer;
 import br.com.ecommerce_api.infrastructure.repositories.*;
 import br.com.ecommerce_api.application.dtos.PedidoHistoricoDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
@@ -104,7 +106,10 @@ public class PedidoService {
                 .orElseThrow(() -> new RuntimeException("Pagamento não encontrado"));
 
         if (pagamento.getStatus().equals("PAGO")) {
-            throw new RuntimeException("Este pagamento já foi processado.");
+            // Idempotente: aprovação repetida não tem efeito colateral, recusa em cima
+            // de já-pago indica inconsistência real e merece falha explícita
+            if (dto.statusPagamento().equalsIgnoreCase("APROVADO")) return;
+            throw new RuntimeException("Pagamento já processado, não pode ser RECUSADO");
         }
 
         if (dto.statusPagamento().equalsIgnoreCase("APROVADO")) {
@@ -129,6 +134,39 @@ public class PedidoService {
         }
 
         pagamentoRepository.save(pagamento);
+    }
+
+    public Page<PedidoAdminDTO> listarTodosAdmin(Pageable pageable) {
+        return pedidoRepository.findAll(pageable).map(this::toPedidoAdminDTO);
+    }
+
+    @Transactional
+    public PedidoAdminDTO simularPixPago(Long pedidoId) {
+        Pedido pedido = pedidoRepository.findById(pedidoId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido não encontrado"));
+
+        if (pedido.getPagamento() == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Pedido sem pagamento associado");
+        }
+
+        processarPagamentoPix(new WebhookPixDTO(pedido.getPagamento().getCodigoPix(), "APROVADO"));
+
+        Pedido atualizado = pedidoRepository.findById(pedidoId).orElseThrow();
+        return toPedidoAdminDTO(atualizado);
+    }
+
+    private PedidoAdminDTO toPedidoAdminDTO(Pedido pedido) {
+        Pagamento pagamento = pedido.getPagamento();
+        return new PedidoAdminDTO(
+                pedido.getId(),
+                pedido.getDataPedido(),
+                pedido.getStatus(),
+                pedido.getValorTotal(),
+                pedido.getUsuario().getNome(),
+                pedido.getUsuario().getEmail(),
+                pagamento != null ? pagamento.getCodigoPix() : null,
+                pagamento != null ? pagamento.getStatus() : null
+        );
     }
 
     public List<PedidoHistoricoDTO> buscarMeusPedidos(Usuario usuarioLogado) {
